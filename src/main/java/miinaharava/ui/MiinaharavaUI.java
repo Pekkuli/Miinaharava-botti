@@ -2,8 +2,6 @@
 package miinaharava.ui;
 
 import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -138,15 +136,15 @@ public class MiinaharavaUI extends Application{
         if(!lauta.onkoAloitettu()) {
             for(int i=0;i<h;i++) {
                 for(int j=0;j<w;j++) {
-                    gc.drawImage(this.lauta.getRuutuIcon(i, j), i*25, j*25);
+                    gc.drawImage(lauta.getRuutuIcon(i, j), i*25, j*25);
                     
                 }
             }
         } else {
             System.out.println(lauta.getPaivitetytRuudut().size());
-            for (Ruutu ruutu : this.lauta.getPaivitetytRuudut()) {
+            for (Ruutu ruutu : lauta.getPaivitetytRuudut()) {
                 gc.clearRect(ruutu.getX()*25+1, ruutu.getY()*25+1, 23, 23);
-                gc.drawImage(ruutu.getIcon(),ruutu.getX()*25, ruutu.getY()*25);
+                gc.drawImage(lauta.getRuutuIcon(ruutu.getX(), ruutu.getY()),ruutu.getX()*25, ruutu.getY()*25);
             }
             this.lauta.resetPaivitetyt();
         }

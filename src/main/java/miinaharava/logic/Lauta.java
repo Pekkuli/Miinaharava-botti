@@ -34,18 +34,18 @@ public final class Lauta {
     
     public Lauta(int x, int y, int miinat) throws IOException{
         
-        this.COVER = new Image(new File("Images/"  +"COVER.png").toURI().toString());
-        this.EMPTY = new Image(new File("Images/"  +"EMPTY.png").toURI().toString());
-        this.ONE = new Image(new File("Images/"  +"1.png").toURI().toString());
-        this.TWO = new Image(new File("Images/"  +"2.png").toURI().toString());
-        this.THREE = new Image(new File("Images/"  +"3.png").toURI().toString());
-        this.FOUR = new Image(new File("Images/"  +"4.png").toURI().toString());
-        this.FIVE = new Image(new File("Images/"  +"5.png").toURI().toString());
-        this.SIX = new Image(new File("Images/"  +"6.png").toURI().toString());
-        this.SEVEN = new Image(new File("Images/"  +"7.png").toURI().toString());
-        this.EIGHT = new Image(new File("Images/"  +"8.png").toURI().toString());
-        this.MINE = new Image(new File("Images/"  +"MINE.png").toURI().toString());
-        this.MARKED = new Image(new File("Images/"  +"MARKED.png").toURI().toString());
+        this.COVER = new Image("Images/"  +"COVER.png");
+        this.EMPTY = new Image("Images/"  +"EMPTY.png");
+        this.ONE = new Image("Images/"  +"1.png");
+        this.TWO = new Image("Images/"  +"2.png");
+        this.THREE = new Image("Images/"  +"3.png");
+        this.FOUR = new Image("Images/"  +"4.png");
+        this.FIVE = new Image("Images/"  +"5.png");
+        this.SIX = new Image("Images/"  +"6.png");
+        this.SEVEN = new Image("Images/"  +"7.png");
+        this.EIGHT = new Image("Images/"  +"8.png");
+        this.MINE = new Image("Images/"  +"MINE.png");
+        this.MARKED = new Image("Images/"  +"MARKED.png");
         
         this.aloitettu=false;
         this.kokox=x;
