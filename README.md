@@ -1,2 +1,2 @@
-# Miinaharava-botti
-javalla tehty graafinen miinaharava ja miinaharavaa pelaava AI (botti)
+# Minesweeper-bot
+- Graphical minesweeper with game playing bot made with java.
