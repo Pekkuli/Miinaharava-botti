@@ -1,17 +1,16 @@
 
 package miinaharava.logic;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 import java.util.Stack;
 import javafx.scene.image.Image;
 
 public final class Lauta {
+    
     private final int kokox;
     private final int kokoy;
     private final int miinalkm;
-    private boolean aloitettu;
     
     private final Image COVER;
     private final Image  EMPTY;
@@ -28,8 +27,10 @@ public final class Lauta {
     
     private Ruutu[][] lauta;
     private int[][] miinat;
-    private Stack<Ruutu> paivitetytruudut;
+//    private Stack<Ruutu> paivitetytruudut;
     private  boolean showmines;
+    private boolean aloitettu;
+    private boolean hävitty;
     
     
     public Lauta(int x, int y, int miinat) throws IOException{
@@ -54,18 +55,41 @@ public final class Lauta {
         this.lauta = new Ruutu[x][y];
         this.miinat = new int[x][y];
         this.showmines = false;
-        this.paivitetytruudut = new Stack();
+        this.hävitty = false;
         
+        // fill board with empty cells
         for(int i=0;i<kokox;i++){
             for(int j=0;j<kokoy;j++){
                 putRuutu(i,j,10,false,false);
             }
         }
     }
+
+    public boolean isHävitty() {
+        return hävitty;
+    }
     
-    public void aloita(int x, int y) throws IOException{
-        AsetaMiinat(x,y);
-        this.aloitettu=true;
+    public void reset() throws IOException {
+        for(int i=0;i<kokox;i++){
+            for(int j=0;j<kokoy;j++){
+                putRuutu(i,j,10,false,false);
+            }
+        }
+        
+        System.out.println("lauta has been resetd");
+//        resetPaivitetyt();
+        this.aloitettu=false;
+        this.showmines = false;
+        this.hävitty=false;
+        
+    }
+    
+    public int getKokox() {
+        return kokox;
+    }
+
+    public int getKokoy() {
+        return kokoy;
     }
     
     public boolean onkoAloitettu(){
@@ -88,19 +112,31 @@ public final class Lauta {
             } else {
             }
         }
+        this.aloitettu=true;
     }
     
-    public boolean showMines() {
+    public void showMines() throws IOException {
+        for(int i=0;i<this.kokox;i++){
+            for(int j=0;j<this.kokoy;j++){
+                
+                if(this.miinat[i][j] ==1){
+                    this.lauta[i][j] = new Ruutu(i,j,9,true,false);
+                }
+            }
+        }
+    }
+    
+    public boolean minesShown() {
         return this.showmines;
     }
     
-    public Stack<Ruutu> getPaivitetytRuudut() {
-        return this.paivitetytruudut;
-    }
-    
-    public void resetPaivitetyt() {
-        this.paivitetytruudut = new Stack();
-    }
+//    public Stack<Ruutu> getPaivitetytRuudut() {
+//        return this.paivitetytruudut;
+//    }
+//    
+//    public void resetPaivitetyt() {
+//        this.paivitetytruudut = new Stack();
+//    }
     
     public Image getRuutuIcon(int x, int y) {
         Ruutu ruutu = getRuutu(x,y);
@@ -125,32 +161,26 @@ public final class Lauta {
         }
     }
     
-    public void paivitaRuutu(Ruutu ruutu){
-        
-        if(!this.paivitetytruudut.contains(ruutu)){
-            this.paivitetytruudut.add(ruutu);
-        }
-    }
-    
     public void clickRuutu(int x, int y) throws IOException{
         Ruutu ruutu = getRuutu(x, y);
-        
+        if(!this.aloitettu) {
+            
+            this.AsetaMiinat(x, y);
+        }
         if(!ruutu.isMarked() && !ruutu.isClicked()){ //only click unmarked and unclicked cells
-            if(ruutu.GetTrueType() == 9) { // ruutu is mine reveal the mine
+            if(ruutu.GetTrueType() == 9) { // ruutu is mine -> reveal all of them and end game.
                 
-                putRuutu(x, y,9,true,false);
-                paivitaRuutu(new Ruutu(x,y,9,true,false));
+                naytaMiinat();
+                this.hävitty = true;
                 
             } else if (vierekkäisetMiinat(x,y) ==0){
-                
+
                 putRuutu(x,y,0,true,false);
-                paivitaRuutu(new Ruutu(x,y,0,true,false));
                 avaaVierekkäiset(x,y);
-                
+
             } else {
-                
+
                 putRuutu(x,y,vierekkäisetMiinat(x,y),true,false);
-                paivitaRuutu(new Ruutu(x,y,vierekkäisetMiinat(x,y),true,false));
             }
         }
     }
@@ -164,12 +194,10 @@ public final class Lauta {
                 if(ruutu.isMarked()){ // unmark marked cell
 
                     putRuutu(x,y,ruutu.GetTrueType(),false,false);
-                    paivitaRuutu(new Ruutu(x,y,10,false,false));
 
                 } else { // mark the cell
 
                     putRuutu(x,y,ruutu.GetTrueType(),false,true);
-                    paivitaRuutu(new Ruutu(x,y,10,false,true));
 
                 }
             }
@@ -232,10 +260,6 @@ public final class Lauta {
     public void updateRuutu(int x,int y,int type, Boolean clicked, Boolean marked) throws IOException {
         Ruutu ruutu = new Ruutu(x,y,type,clicked,marked);
         lauta[x][y] = ruutu;
-        
-        if(!this.paivitetytruudut.contains(ruutu)){
-            this.paivitetytruudut.add(ruutu);
-        }
     }
     
     public void naytaMiinat() throws IOException{
@@ -246,8 +270,6 @@ public final class Lauta {
                 if(this.miinat[i][j] ==1){
                     
                     putRuutu(i,j,9,true,false);
-                    paivitaRuutu(new Ruutu(i,j,9,true,false));
-                    
                 }
             }
         }
