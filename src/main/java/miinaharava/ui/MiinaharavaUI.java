@@ -6,6 +6,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -16,72 +17,102 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-import miinaharava.logic.Lauta;
+import miinaharava.logic.Board;
 
-public class MiinaharavaUI extends Application{
+public class MiinaharavaUI extends Application {
     
-    private Lauta lauta;
+    private Board lauta;
     private int seconds;
+    
+    
+    private Text time;
+    private Text wintext;
+    private Text markcounter;
     
     Timeline timer;
     
     private Scene startscene;
-    private Scene gamescene;
+    private Scene gameScene;
     
     private GridPane lautanodes;
     
-    private Stage popup;
+    private Stage deathscreen;
+    private Stage winscreen;
     
-    private MediaPlayer mediap;
+    private MediaPlayer deathsound;
     
-    public ImageView createRuutuNode(int x, int y) {
+    
+    public ImageView createCellNode(int x, int y) {
+        
         Image img = lauta.getRuutuIcon(x, y);
-        ImageView imgv =new ImageView();
+        ImageView imgv = new ImageView();
         imgv.setImage(img);
         imgv.setX(x);
         imgv.setY(y);
         
+        // set node left and right click features e.g. right click -> mark cell, left click -> click cell, and then perform appropiate logic
         imgv.setOnMouseClicked((MouseEvent event) -> {
+            markcounter.setText(lauta.getMarkcount());
             switch (event.getButton()) {
-                case PRIMARY:
+                
+                case PRIMARY: // if mine is clicked end game 
                     
-                    if(lauta.getRuutu(x, y).GetTrueType() ==9) {
+                    if(!lauta.getCell(x, y).isMarked()) {
                         
-                        try {
-                            lauta.showMines();
-                        } catch (IOException ex) {
-                        }
+                        timer.play();
+                        lauta.clickCell(x, y);
                         this.drawLauta();
-                        timer.stop();
-                        mediap.play();
-                        popup.show();
-                    } else {
-                        try {
-                            timer.play();
-                            lauta.clickRuutu(x,y);
+                        
+                        if (lauta.getCell(x, y).getTrueType() == 9) {
+                            
+                            lauta.revealMines();
+                            seconds = 0;
                             this.drawLauta();
+                            timer.stop();
+                            deathsound.play();
+                            deathscreen.show();
+                            
+                        } else {
+                            if (this.lauta.checkIfGameIsWon()) {
+                                
+                                timer.stop();
+                                wintext.setText("Completed in: " + formatTime(seconds));
+                                seconds=0;
+                                this.drawLauta();
+                                winscreen.show();
 
-                        } catch (IOException ex) {
-                        }
+                            } else { 
+                            
+                            }
+                        }  
                     }
+                    break;
+                case SECONDARY:
                     
-                case SECONDARY: {
+                    lauta.markCell(x, y);
+//                    markcounter.setText(lauta.getMarkcount());
+                    this.drawLauta();
                     
-                    try {
-                        
-                        lauta.merkkaaRuutu(x,y);
+                    if(this.lauta.checkIfGameIsWon()) {
+                        timer.stop();
+                        wintext.setText("Completed in: " + formatTime(seconds));
+                        seconds=0;
+//                        this.lauta.revealMines();
                         this.drawLauta();
+                        winscreen.show();
                         
-                    } catch (IOException ex) {
-                    }
-                }   break;
+                    } 
+                    break;
                 default:
                     break;
             }
@@ -90,27 +121,27 @@ public class MiinaharavaUI extends Application{
         return imgv;
     }
     
-    public void drawLauta() {
+    public void drawLauta() { // clear existing nodes from gridpane and then add the new ones in
         lautanodes.getChildren().clear();
-        for(int i=0;i<lauta.getKokox();i++) {
-            for(int j=0;j<lauta.getKokoy();j++) {
-                lautanodes.add(createRuutuNode(i,j),i,j);
+        for (int i = 0; i < lauta.getSizeX(); i++) {
+            for (int j = 0; j < lauta.getSizeY(); j++) {
+                lautanodes.add(createCellNode(i, j), i, j);
             }
         }
         
     }
     
-    public void reDrawLauta() {
-        
-        for(int i=0;i<lauta.getKokox();i++) {
-            for(int j=0;j<lauta.getKokoy();j++) {
-                ImageView img = (ImageView) lautanodes.getChildren().get(lauta.getKokox()*i+j);
-                lautanodes.getChildren().remove(img);
-                lautanodes.add(createRuutuNode(i,j),i,j);
-            }
-        }
-        
-    }
+//    public void reDrawLauta() {
+//        
+//        for (int i = 0; i < lauta.getSizeX(); i++) {
+//            for (int j = 0; j < lauta.getSizeY(); j++) {
+//                ImageView img = (ImageView) lautanodes.getChildren().get(lauta.getSizeX() * i + j);
+//                lautanodes.getChildren().remove(img);
+//                lautanodes.add(createCellNode(i, j), i, j);
+//            }
+//        }
+//        
+//    }
     
     @Override
     public void start(Stage primarystage) throws Exception {
@@ -119,44 +150,88 @@ public class MiinaharavaUI extends Application{
         
         //########################### popupscene setup ################################
         
-        popup = new Stage();
-        BorderPane poppane = new BorderPane();
-        ImageView imgv = new ImageView();
-        imgv.setImage(new Image("Images/"  +"YOUDIED.png"));
-        poppane.setCenter(imgv);
-        Scene popscene = new Scene(poppane);
+        deathscreen = new Stage();
+        BorderPane popPane = new BorderPane();
+        popPane.setPadding(new Insets(10,10,10,10));
+        ImageView loseimg = new ImageView();
+        loseimg.setImage(new Image("Images/"  + "YOUDIED.png"));
+        popPane.setCenter(loseimg);
+        Scene popscene = new Scene(popPane);
         Media sound = new Media(this.getClass().getResource("/YOUDIED.mp3").toString());
-        mediap = new MediaPlayer(sound);
-        mediap.volumeProperty().set(0.25);
+        deathsound = new MediaPlayer(sound);
+        deathsound.volumeProperty().set(0.25);
         
-        popup.centerOnScreen();
+        deathscreen.centerOnScreen();
         
-        popup.initModality(Modality.WINDOW_MODAL);
-        popup.initOwner(primarystage);
-        popup.setAlwaysOnTop(true);
-        popup.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent) -> {
-            mediap.stop();
-            popup.hide();
+        deathscreen.initModality(Modality.WINDOW_MODAL);
+        deathscreen.initOwner(primarystage);
+        deathscreen.setAlwaysOnTop(true);
+        
+        deathscreen.setOnShown(event -> time.setText(formatTime(seconds)));
+        
+        deathscreen.addEventHandler(MouseEvent.MOUSE_CLICKED, (mouseEvent) -> {
+            deathsound.stop();
+            deathscreen.hide();
             primarystage.setScene(startscene);
         });
         
-        popup.setOnCloseRequest((WindowEvent event) -> {
-            mediap.stop();
+        deathscreen.setOnCloseRequest((event) -> {
+            deathsound.stop();
             primarystage.setScene(startscene);
         });
         
-        popup.setScene(popscene);
+        deathscreen.setScene(popscene);
         
         
         
-        
-        //########################### startupscene setup ################################
-        
+        //########################## winscene setup ##################################
         
         
-        lauta = new Lauta(0,0,0);
+        
+        winscreen = new Stage();
+        BorderPane winPane = new BorderPane();
+        winPane.setPadding(new Insets(10,10,10,10));
+        
+        ImageView winimg = new ImageView();
+        winimg.setImage(new Image("Images/"  + "WINSCREEN.png"));
+        winPane.setCenter(winimg);
+        BorderPane.setAlignment(winimg, Pos.CENTER);
+        
+        wintext = new Text();
+        winPane.setTop(wintext);
+        BorderPane.setAlignment(wintext, Pos.TOP_CENTER);
+        
+        Scene winscene = new Scene(winPane);
+        
+        winscreen.initModality(Modality.WINDOW_MODAL);
+        winscreen.initOwner(primarystage);
+        winscreen.setAlwaysOnTop(true);
+        winscreen.centerOnScreen();
+        
+        winscreen.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent) -> {
+            time.setText(formatTime(0));
+            deathsound.stop();
+            winscreen.hide();
+            primarystage.setScene(startscene);
+        });
+        
+        winscreen.setOnCloseRequest((event) -> {
+            time.setText(formatTime(0));
+            deathsound.stop();
+            primarystage.setScene(startscene);
+        });
+        winscreen.setScene(winscene);
+        
+        
+        
+        //########################### startUpScene setup ################################
+        
+        
+        
+        lauta = new Board(0, 0, 0);
 
-        BorderPane startpane = new BorderPane();
+        BorderPane startPane = new BorderPane();
+        startPane.setPadding(new Insets(10,10,10,10));
         
         ToolBar vaikeusasteet = new ToolBar();
         
@@ -166,12 +241,13 @@ public class MiinaharavaUI extends Application{
         easy.setOnAction((ActionEvent event) -> {
             try {
                 
-                lauta = new Lauta(8,8,10);
+                lauta = new Board(8, 8, 10);
                 
             } catch (IOException ex) {
             }
+            markcounter.setText("10");
             this.drawLauta();
-            primarystage.setScene(gamescene);
+            primarystage.setScene(gameScene);
             primarystage.sizeToScene();
             
         });
@@ -182,12 +258,13 @@ public class MiinaharavaUI extends Application{
         medium.setOnAction((ActionEvent event) -> {
             try {
                 
-                lauta = new Lauta(16,16,40);
+                lauta = new Board(16, 16, 40);
                 
             } catch (IOException ex) {
             }
+            markcounter.setText("40");
             this.drawLauta();
-            primarystage.setScene(gamescene);
+            primarystage.setScene(gameScene);
             primarystage.sizeToScene();
         });
         
@@ -197,21 +274,25 @@ public class MiinaharavaUI extends Application{
         hard.setOnAction((ActionEvent event) -> {
             try {
                 
-                lauta = new Lauta(30,24,200);
+                lauta = new Board(30, 16, 99);
                 
             } catch (IOException ex) {
             }
+            markcounter.setText("99");
             this.drawLauta();
-            primarystage.setScene(gamescene);
+            primarystage.setScene(gameScene);
             primarystage.sizeToScene();
             
         });
-        vaikeusasteet.getItems().addAll(easy,medium,hard);
-        vaikeusasteet.setOrientation(Orientation.VERTICAL);
-        startpane.setLeft(vaikeusasteet);
-        startpane.setMinSize(300, 150);
         
-        startscene = new Scene(startpane);
+        vaikeusasteet.getItems().addAll(easy, medium, hard);
+        vaikeusasteet.setOrientation(Orientation.VERTICAL);
+        vaikeusasteet.setPrefHeight(140);
+        
+        startPane.setLeft(vaikeusasteet);
+        startPane.setMinSize(300, 140);
+        
+        startscene = new Scene(startPane);
         
         
         
@@ -220,57 +301,83 @@ public class MiinaharavaUI extends Application{
         seconds = 0;
         
         BorderPane gameborder = new BorderPane();
-        gamescene = new Scene(gameborder);
+        gameborder.setPadding(new Insets(10,10,10,10));
+        gameScene = new Scene(gameborder);
         
-        Button reset = new Button("Reset game");
         
-        Button showmine = new Button("Show mines");
-        showmine.setMaxSize(80, 25);
-        
-        Text text = new Text(FormatTime(seconds));
+        time = new Text(formatTime(seconds));
         
         timer = new Timeline(new KeyFrame(Duration.seconds(1), (ActionEvent t) -> {
             seconds++;
-            text.setText(FormatTime(seconds));
+            time.setText(formatTime(seconds));
         }));
         timer.setCycleCount(Timeline.INDEFINITE);
         
+        markcounter = new Text();
+        markcounter.setText(lauta.getMarkcount());
         
-        ToolBar gamebar = new ToolBar();
-        gamebar.setOrientation(Orientation.HORIZONTAL);
-        gamebar.setPrefHeight(25);
-        
-        BorderPane.setAlignment(text, Pos.TOP_RIGHT);
-        BorderPane.setAlignment(gamebar, Pos.TOP_LEFT);
-        gamebar.getItems().addAll(reset,showmine,text);
-        
+        Button reset = new Button("Reset game");
         
         reset.setOnAction((ActionEvent event) -> {
             lautanodes.getChildren().clear();
             timer.stop();
-            try {
-                lauta.reset();
-                text.setText(FormatTime(0));
+            lauta.reset();
+            time.setText(formatTime(0));
+            seconds=0;
+            this.drawLauta();
+        });
+        
+        Button showmine = new Button("Show mines");
+        
+        showmine.setOnAction((ActionEvent event) -> {
+            if (lauta.isGameStarted() && !lauta.minesShown()) {
+                lauta.revealMines();
+                timer.stop();
                 this.drawLauta();
-            } catch (IOException ex) {
             }
         });
         
-        showmine.setOnAction((ActionEvent event) -> {
-            if(lauta.onkoAloitettu() && !lauta.minesShown()){
-                try {
-                    lauta.naytaMiinat();
-                    this.drawLauta();
-                } catch (IOException ex) {
-                }
-            }
+        Button difficulty = new Button("Difficulty selection");
+        
+        difficulty.setOnAction((event) -> {
+            markcounter.setText("0");
+            time.setText(formatTime(0));
+            seconds=0;
+            primarystage.setScene(startscene);
         });
+
+        VBox keski = new VBox();
+        keski.getChildren().addAll(difficulty, reset);
+        keski.setAlignment(Pos.CENTER);
+
+        final Pane leftSpacer = new Pane();
+        HBox.setHgrow(
+                leftSpacer,
+                Priority.SOMETIMES
+        );
+        
+        final Pane rightSpacer = new Pane();
+        HBox.setHgrow(
+                rightSpacer,
+                Priority.SOMETIMES
+        );
+
+        ToolBar gamebar = new ToolBar(
+                markcounter,
+                leftSpacer,
+                keski,
+                rightSpacer,
+                this.time
+        );
+        
+        gamebar.setOrientation(Orientation.HORIZONTAL);
         
         lautanodes = new GridPane();
         this.drawLauta();
-
+        
         gameborder.setTop(gamebar);
         gameborder.setCenter(lautanodes);
+        BorderPane.setAlignment(lautanodes, Pos.CENTER);
         
         
         
@@ -283,14 +390,14 @@ public class MiinaharavaUI extends Application{
         primarystage.show();
     }
     
-    private void restart() {
-        try {
-            start(new Stage());
-        } catch (Exception e) {
-        }
-    }
+//    private void restart() {
+//        try {
+//            start(new Stage());
+//        } catch (Exception e) {
+//        }
+//    }
     
-    private static String FormatTime(int time) {
+    private static String formatTime(int time) {
         return String.format("%02d:%02d", time / 60, time % 60);
     }
 }
