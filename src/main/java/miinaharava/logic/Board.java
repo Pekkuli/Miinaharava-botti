@@ -193,6 +193,10 @@ public final class Board {
         }
     }
     
+    public int getRuutuType(int x, int y) {
+        return this.board[x][y].getType();
+    }
+    
     public void clickCell(int x, int y) {
         
         Cell ruutu = getCell(x, y);
