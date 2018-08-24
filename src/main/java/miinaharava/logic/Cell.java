@@ -10,22 +10,7 @@ public class Cell {
     private boolean clicked;
     private boolean marked;
     
-//    enum Type {
-//        ONE,
-//        TWO,
-//        THREE,
-//        FOUR,
-//        FIVE,
-//        SIX,
-//        SEVEN,
-//        EIGHT,
-//        COVER,
-//        EMPTY,
-//        MARKED,
-//        MINE
-//    }
-    
-    public Cell(int x, int y, int type, Boolean clicked, boolean marked) {
+    Cell(int x, int y, int type, Boolean clicked, boolean marked) {
         this.clicked = clicked;
         this.marked = marked;
         this.x = x;
@@ -53,10 +38,6 @@ public class Cell {
         }
     }
     
-//    public void setClicked() {
-//        this.clicked = true;
-//    }
-    
     public Boolean isMarked() {
         return this.marked;
     }
@@ -71,5 +52,29 @@ public class Cell {
     
     public int getTrueType() {
         return this.type;
+    }
+    
+    public void mark() {
+        this.marked = !(this.marked);
+    }
+    
+    public void click() {
+        this.clicked = true;
+    }
+
+    @Override
+    public String toString() {
+        return "Cell: " + x +
+                "," + y;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Cell cell = (Cell) o;
+        return this.toString().equals(cell.toString());
+//                x == cell.x &&
+//                y == cell.y;
     }
 }
