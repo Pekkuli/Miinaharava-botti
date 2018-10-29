@@ -62,6 +62,19 @@ public class Cell {
         this.clicked = true;
     }
 
+    public boolean cellCoordsMatch(Cell cl) {
+
+        int x = cl.getX();
+        int y = cl.getY();
+
+        return x == this.x && y == this.y;
+
+    }
+
+    public String getCoordsAsString() {
+        return this.x + "," + this.y;
+    }
+
     @Override
     public String toString() {
         return "Cell: " + x +
@@ -76,5 +89,16 @@ public class Cell {
         return this.toString().equals(cell.toString());
 //                x == cell.x &&
 //                y == cell.y;
+    }
+
+    @Override
+    public int hashCode() {
+
+        String asd = "";
+        asd += this.x;
+        asd += this.y;
+
+        return Integer.parseInt(asd);
+
     }
 }

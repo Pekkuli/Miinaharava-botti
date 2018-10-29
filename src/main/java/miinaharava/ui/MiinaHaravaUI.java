@@ -28,10 +28,9 @@ import miinaharavaBot.MiinaHaravaBot;
 
 public class MiinaHaravaUI extends Application {
     
-    private Board lauta;
+    private Board board;
     private int seconds;
     private double timerScaling =0.2;
-    
     
     private Text time;
     private Text winText;
@@ -48,12 +47,15 @@ public class MiinaHaravaUI extends Application {
     private Stage winScreen;
     
     private MediaPlayer deathSound;
+
     private MiinaHaravaBot bot;
+
+//    private Button reset;
 
 
     private ImageView createCellNode(int x, int y) { // each imageview is its own cell in the game with built-in clicking actions
         
-        Image img = lauta.getRuutuIcon(x, y);
+        Image img = board.getRuutuIcon(x, y);
         ImageView imgv = new ImageView();
         imgv.setImage(img);
         imgv.setX(x);
@@ -62,38 +64,43 @@ public class MiinaHaravaUI extends Application {
         // set node left and right click features e.g. right click -> mark cell, left click -> click cell, and then perform appropiate logic
         imgv.setOnMouseClicked((MouseEvent event) -> {
             switch (event.getButton()) {
-                
+
+                case NONE:
+                    break;
                 case PRIMARY:
                     
-                    if(!lauta.getCell(x, y).isMarked() && !lauta.getCell(x, y).isClicked()) {
+                    if(!board.getCell(x, y).isMarked() && !board.getCell(x, y).isClicked()) {
                         
                         timer.play();
-                        lauta.clickCell(x, y);
+                        board.clickCell(x, y);
+                        imgv.setImage(board.getRuutuIcon(x,y));
                         this.drawLauta();
                         
-                        if (lauta.getCell(x, y).getTrueType() == 9) {
-                            
-                            seconds = 0;
-                            timer.stop();
-                            deathSound.play();
-                            deathScreen.show();
+                        if (board.getCell(x, y).getTrueType() == 9) {
+
+                            loseGame();
                             break;
                             
                         } else {
-                            WinConditionCheck();
+
+                            WinGameCheck();
                             break;
                         }  
                     }
                     break;
-                    
+
+                case MIDDLE:
+
+                    break;
+
                 case SECONDARY:
                     
-                    lauta.markCell(x, y);
-                    imgv.setImage(lauta.getRuutuIcon(x, y));
+                    board.markCell(x, y);
+                    imgv.setImage(board.getRuutuIcon(x, y));
                     this.drawLauta();
-
-                    WinConditionCheck();
+                    WinGameCheck();
                     break;
+
                 default:
                     break;
             }
@@ -102,8 +109,16 @@ public class MiinaHaravaUI extends Application {
         return imgv;
     }
 
-    private void WinConditionCheck() {
-        if (this.lauta.checkIfGameIsWon()) {
+    private void loseGame() {
+        seconds = 0;
+        timer.stop();
+        bot.stop();
+        deathSound.play();
+        deathScreen.show();
+    }
+
+    private void WinGameCheck() {
+        if (this.board.checkIfGameIsWon()) {
 
             bot.stop();
             timer.stop();
@@ -116,14 +131,73 @@ public class MiinaHaravaUI extends Application {
 
     private void drawLauta() { // clear existing nodes from gridpane and then add the new ones in
         lautaNodes.getChildren().clear();
-        for (int i = 0; i < lauta.getSizeX(); i++) {
-            for (int j = 0; j < lauta.getSizeY(); j++) {
+        for (int i = 0; i < board.getSizeX(); i++) {
+            for (int j = 0; j < board.getSizeY(); j++) {
                 lautaNodes.add(createCellNode(i, j), i, j);
             }
         }
         
     }
-    
+
+    private void botPlei() {
+
+        if(bot.isBotOn()) {
+
+            bot.plei();
+            WinGameCheck();
+
+        } else if(board.isGameStarted()){
+
+            System.out.println("Resetting game with bot");
+            resetGame();
+
+            bot.start();
+        }
+        time.setText(formatTime(seconds));
+
+    }
+
+    private void initBoard() {
+
+        this.bot = new MiinaHaravaBot(this.board);
+        markCounter.setText(this.board.getMineCountString());
+        this.drawLauta();
+
+        timer.play();
+    }
+
+
+//
+//    public MiinaHaravaUI() {
+//        reset = new Button("Reset game");
+//
+//        reset.setOnAction((ActionEvent event) -> {
+//            lautaNodes.getChildren().clear();
+//            timer.stop();
+//            board.reset();
+//            time.setText(formatTime(0));
+//            markCounter.setText(board.getMineCountString());
+//            seconds=0;
+//            bot.stop();
+//            this.drawLauta();
+//            winScreen.hide();
+//        });
+//    }
+
+    private void resetGame() {
+
+        deathSound.stop();
+        deathScreen.hide();
+        winScreen.hide();
+
+        lautaNodes.getChildren().clear();
+        markCounter.setText(board.getMineCountString());
+        board.reset();
+        time.setText(formatTime(0));
+        seconds=0;
+        this.drawLauta();
+    }
+
     @Override
     public void start(Stage primaryStage) {
         
@@ -132,12 +206,12 @@ public class MiinaHaravaUI extends Application {
         //########################################## deathscene setup ################################
         
         deathScreen = new Stage();
-        BorderPane deathpane = new BorderPane();
-        deathpane.setPadding(new Insets(10,10,10,10));
-        ImageView loseimg = new ImageView();
-        loseimg.setImage(new Image("Images/"  + "YOUDIED.png"));
-        deathpane.setCenter(loseimg);
-        Scene popscene = new Scene(deathpane);
+        BorderPane deathPane = new BorderPane();
+        deathPane.setPadding(new Insets(10,10,10,10));
+        ImageView loseWindowImg = new ImageView();
+        loseWindowImg.setImage(new Image("Images/"  + "YOUDIED.png"));
+        deathPane.setCenter(loseWindowImg);
+        Scene popScene = new Scene(deathPane);
         Media sound = new Media(this.getClass().getResource("/YOUDIED.mp3").toString());
         deathSound = new MediaPlayer(sound);
         deathSound.volumeProperty().set(0.25);
@@ -152,21 +226,16 @@ public class MiinaHaravaUI extends Application {
         
         Button resetBtn = new Button("Reset game");
         resetBtn.setOnAction((ActionEvent event) -> {
-            deathSound.stop();
-            deathScreen.hide();
-            winScreen.hide();
+
+            resetGame();
+            timer.stop();
+            bot.deActivate();
+
             primaryStage.setScene(gameScene);
             primaryStage.centerOnScreen();
-            lautaNodes.getChildren().clear();
-            markCounter.setText(lauta.getMineCount());
-            timer.stop();
-            lauta.reset();
-            time.setText(formatTime(0));
-            seconds=0;
-            this.drawLauta();
         });
 
-        deathpane.setBottom(resetBtn);
+        deathPane.setBottom(resetBtn);
         
         deathScreen.addEventHandler(MouseEvent.MOUSE_CLICKED, (mouseEvent) -> {
             deathSound.stop();
@@ -181,7 +250,7 @@ public class MiinaHaravaUI extends Application {
             primaryStage.centerOnScreen();
         });
         
-        deathScreen.setScene(popscene);
+        deathScreen.setScene(popScene);
         
         
         
@@ -232,7 +301,7 @@ public class MiinaHaravaUI extends Application {
         
         
         
-//        lauta = new Board(0, 0, 0);
+//        board = new Board(0, 0, 0);
 
         BorderPane startPane = new BorderPane();
         startPane.setMinSize(200, 100);
@@ -259,30 +328,35 @@ public class MiinaHaravaUI extends Application {
         MenuItem hard = new MenuItem("hard");
         
         easy.setOnAction((ActionEvent event) -> {
-            lauta = new Board(8, 8, 10);
-            this.bot = new MiinaHaravaBot(this.lauta);
-            markCounter.setText("10");
-            this.drawLauta();
+            board = new Board(8, 8, 10);
+
             primaryStage.setScene(gameScene);
             primaryStage.sizeToScene();
             primaryStage.centerOnScreen();
+
         });
 
         medium.setOnAction((ActionEvent event) -> {
-            lauta = new Board(16, 16, 40);
-            this.bot = new MiinaHaravaBot(this.lauta);
-            markCounter.setText("40");
-            this.drawLauta();
+            board = new Board(35, 35, 196);
+
+            initBoard();
+
+//            this.bot = new MiinaHaravaBot(this.board);
+//            markCounter.setText(this.board.getMineCountString());
+//            this.drawLauta();
             primaryStage.setScene(gameScene);
             primaryStage.sizeToScene();
             primaryStage.centerOnScreen();
         });
         
         hard.setOnAction((ActionEvent event) -> {
-            lauta = new Board(30, 16, 99);
-            this.bot = new MiinaHaravaBot(this.lauta);
-            markCounter.setText("99");
-            this.drawLauta();
+            board = new Board(30, 16, 99);
+
+            initBoard();
+
+//            this.bot = new MiinaHaravaBot(this.board);
+//            markCounter.setText(this.board.getMineCountString());
+//            this.drawLauta();
             primaryStage.setScene(gameScene);
             primaryStage.sizeToScene();
             primaryStage.centerOnScreen();
@@ -315,7 +389,7 @@ public class MiinaHaravaUI extends Application {
 //            switch ((String)result.get()) {
 //                case "Easy" : {
 //                    try {
-//                        lauta = new Board(8, 8, 10);
+//                        board = new Board(8, 8, 10);
 //                        System.out.println("board init successfull (easy)");
 //                    } catch (IOException ex) {
 //                    }
@@ -324,7 +398,7 @@ public class MiinaHaravaUI extends Application {
 //                }
 //                case "Medium" : {
 //                    try {
-//                        lauta = new Board(16, 16, 40);
+//                        board = new Board(16, 16, 40);
 //                        System.out.println("board init successfull (medium)");
 //                    } catch (IOException ex) {
 //                    }
@@ -333,7 +407,7 @@ public class MiinaHaravaUI extends Application {
 //                }
 //                case "Hard" : {
 //                    try {
-//                        lauta = new Board(30, 16, 99);
+//                        board = new Board(30, 16, 99);
 //                        System.out.println("board init successfull (hard)");
 //                    } catch (IOException ex) {
 //                    }
@@ -356,7 +430,7 @@ public class MiinaHaravaUI extends Application {
 //        easy.setOnAction((ActionEvent event) -> {
 //            try {
 //                
-//                lauta = new Board(8, 8, 10);
+//                board = new Board(8, 8, 10);
 //                
 //            } catch (IOException ex) {
 //            }
@@ -373,7 +447,7 @@ public class MiinaHaravaUI extends Application {
 //        medium.setOnAction((ActionEvent event) -> {
 //            try {
 //                
-//                lauta = new Board(16, 16, 40);
+//                board = new Board(16, 16, 40);
 //                
 //            } catch (IOException ex) {
 //            }
@@ -389,7 +463,7 @@ public class MiinaHaravaUI extends Application {
 //        hard.setOnAction((ActionEvent event) -> {
 //            try {
 //                
-//                lauta = new Board(30, 16, 99);
+//                board = new Board(30, 16, 99);
 //                
 //            } catch (IOException ex) {
 //            }
@@ -424,19 +498,34 @@ public class MiinaHaravaUI extends Application {
         
         time = new Text(formatTime(seconds));
         
-        timer = new Timeline(new KeyFrame(Duration.seconds(this.timerScaling), (ActionEvent t) -> {
+        timer = new Timeline(new KeyFrame(Duration.seconds(timerScaling), (ActionEvent t) -> {
 
-            seconds++;
-            time.setText(formatTime(seconds));
-            markCounter.setText(lauta.getMarkCount());
-
-            if(bot.isBotOn()){
-
-                bot.plei();
-                this.drawLauta();
-                this.WinConditionCheck();
-
+            if(bot.isBotActive()) {
+                botPlei();
+                drawLauta();
             }
+
+            if(board.isGameStarted()) {
+                seconds++;
+                time.setText(formatTime(seconds));
+                markCounter.setText(board.getMarkCount());
+            }
+
+            if(this.board.isGameLost()) {
+                loseGame();
+            }
+
+
+
+
+
+//            if(bot.isBotOn()){
+//
+//                bot.plei();
+//                this.drawLauta();
+//                this.WinGameCheck();
+//
+//            }
         }));
         timer.setCycleCount(Timeline.INDEFINITE);
         
@@ -445,15 +534,19 @@ public class MiinaHaravaUI extends Application {
         Button reset = new Button("Reset game");
         
         reset.setOnAction((ActionEvent event) -> {
-            lautaNodes.getChildren().clear();
+
+            resetGame();
+
+//            lautaNodes.getChildren().clear();
             timer.stop();
-            lauta.reset();
-            time.setText(formatTime(0));
-            markCounter.setText(lauta.getMineCount());
-            seconds=0;
-            bot.stop();
-            this.drawLauta();
-            winScreen.hide();
+//            board.reset();
+//            time.setText(formatTime(0));
+//            markCounter.setText(board.getMineCountString());
+//            seconds=0;
+//            bot.stop();
+            bot.deActivate();
+//            this.drawLauta();
+//            winScreen.hide();
         });
 
         Button botBtn = new Button("Activate bot");
@@ -466,25 +559,25 @@ public class MiinaHaravaUI extends Application {
         Button showmine = new Button("Show mines");
         
         showmine.setOnAction((ActionEvent event) -> {
-            if (lauta.isGameStarted() && !lauta.minesShown()) {
-//                lauta.revealMines();
+            if (board.isGameStarted() && !board.minesShown()) {
+//                board.revealMines();
                 timer.stop();
                 this.drawLauta();
             }
         });
         
-        Button difficulty = new Button("Difficulty selection");
+        Button difficulty_selection = new Button("Difficulty selection");
         
-        difficulty.setOnAction((event) -> {
+        difficulty_selection.setOnAction((event) -> {
             time.setText(formatTime(0));
             seconds=0;
             primaryStage.setScene(startScene);
             primaryStage.centerOnScreen();
         });
 
-        VBox keski = new VBox();
-        keski.getChildren().addAll(botBtn, difficulty, reset);
-        keski.setAlignment(Pos.CENTER);
+        VBox midBox = new VBox();
+        midBox.getChildren().addAll(botBtn, difficulty_selection, reset);
+        midBox.setAlignment(Pos.CENTER);
 
         final Pane leftSpacer = new Pane();
         HBox.setHgrow(
@@ -501,9 +594,9 @@ public class MiinaHaravaUI extends Application {
         ToolBar gamebar = new ToolBar(
                 markCounter,
                 leftSpacer,
-                keski,
+                midBox,
                 rightSpacer,
-                this.time
+                time
         );
         
         gamebar.setOrientation(Orientation.HORIZONTAL);
@@ -518,7 +611,8 @@ public class MiinaHaravaUI extends Application {
         
         
         //######################################### mainscene setup ########################################
-        
+
+        primaryStage.getIcons().add(new Image("Images/Logo.png"));
         primaryStage.setScene(startScene);
         primaryStage.setResizable(false);
         primaryStage.sizeToScene();
@@ -527,10 +621,10 @@ public class MiinaHaravaUI extends Application {
     }
 
     private String formatTime(int time) {
-        return String.format("%02d:%02d", (int)(time*this.timerScaling) / 60,  (int)(time*this.timerScaling) % 60);
+        return String.format("%02d:%02d", (int)(time*timerScaling) / 60,  (int)(time*timerScaling) % 60);
     }
     
 //    public Board getBoard() {
-//        return this.lauta;
+//        return this.board;
 //    }
 }

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mycompany</groupId>
     <artifactId>Miinaharava</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>v0.4</version>
     <packaging>jar</packaging>
     
     <build>
@@ -23,6 +23,49 @@
                 </archive>
             </configuration>
             </plugin>
+			
+			<plugin>
+			  <groupId>com.akathist.maven.plugins.launch4j</groupId>
+			  <artifactId>launch4j-maven-plugin</artifactId>
+			  <executions>
+				<execution>
+				  <id>l4j-clui</id>
+				  <phase>package</phase>
+				  <goals><goal>launch4j</goal></goals>
+					  <configuration>
+						<headerType>gui</headerType>
+						<outfile>target/Miinaharava-v0.4.exe</outfile>
+						<jar>target/Miinaharava-v0.4.jar</jar>
+						<errTitle>( ͡° ͜ʖ ͡°)</errTitle>
+						<classPath>
+						  <mainClass>miinaharava.Main</mainClass>
+						  <addDependencies>true</addDependencies>
+						  <preCp>anything</preCp>
+						</classPath>
+						<icon>src/main/resources/Images/Logo.ico</icon>
+						<jre>
+						  <minVersion>1.5.0</minVersion>
+						  <opts>
+							<opt>-Djava.endorsed.dirs=./endorsed</opt>
+						  </opts>
+						</jre>
+						<versionInfo>
+						  <fileVersion>1.0.0.0</fileVersion>
+						  <txtFileVersion>${project.version}</txtFileVersion>
+						  <fileDescription>${project.name}</fileDescription>
+						  <copyright>my copyright</copyright>
+						  <productVersion>1.0.0.0</productVersion>
+						  <txtProductVersion>txt product version</txtProductVersion>
+						  <productName>Botbier</productName>
+						  <internalName>MSWBB</internalName>
+						  <originalFilename>original.exe</originalFilename>
+						</versionInfo>
+					  </configuration>
+				</execution>
+			  </executions>
+			</plugin>
+			
+			
            
         </plugins>
     </build>

@@ -1,2 +1,4 @@
 ﻿/target/
 /.idea/
+assembly.xml
+/src/main/java/miinaharavaBot/GetGameDim.java
