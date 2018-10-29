@@ -330,6 +330,8 @@ public class MiinaHaravaUI extends Application {
         easy.setOnAction((ActionEvent event) -> {
             board = new Board(8, 8, 10);
 
+            initBoard();
+
             primaryStage.setScene(gameScene);
             primaryStage.sizeToScene();
             primaryStage.centerOnScreen();
@@ -341,9 +343,6 @@ public class MiinaHaravaUI extends Application {
 
             initBoard();
 
-//            this.bot = new MiinaHaravaBot(this.board);
-//            markCounter.setText(this.board.getMineCountString());
-//            this.drawLauta();
             primaryStage.setScene(gameScene);
             primaryStage.sizeToScene();
             primaryStage.centerOnScreen();
@@ -354,9 +353,6 @@ public class MiinaHaravaUI extends Application {
 
             initBoard();
 
-//            this.bot = new MiinaHaravaBot(this.board);
-//            markCounter.setText(this.board.getMineCountString());
-//            this.drawLauta();
             primaryStage.setScene(gameScene);
             primaryStage.sizeToScene();
             primaryStage.centerOnScreen();
