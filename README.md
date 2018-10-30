@@ -1,2 +1,2 @@
 # Minesweeper-bot
-- Graphical minesweeper with game playing bot made with java.
+- Java based minesweeper game with game playing algorithm
