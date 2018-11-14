@@ -53,12 +53,12 @@
 						  <fileVersion>1.0.0.0</fileVersion>
 						  <txtFileVersion>${project.version}</txtFileVersion>
 						  <fileDescription>${project.name}</fileDescription>
-						  <copyright>my copyright</copyright>
+						  <copyright>( ͡° ͜ʖ ͡°)</copyright>
 						  <productVersion>1.0.0.0</productVersion>
-						  <txtProductVersion>txt product version</txtProductVersion>
-						  <productName>Botbier</productName>
+						  <txtProductVersion>v0.4</txtProductVersion>
+						  <productName>BotBier</productName>
 						  <internalName>MSWBB</internalName>
-						  <originalFilename>original.exe</originalFilename>
+						  <originalFilename>minesweeper.exe</originalFilename>
 						</versionInfo>
 					  </configuration>
 				</execution>

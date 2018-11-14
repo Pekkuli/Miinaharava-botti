@@ -50,7 +50,7 @@ public class Cell {
         return y;
     }
     
-    public int getTrueType() {
+    int getTrueType() {
         return this.type;
     }
     

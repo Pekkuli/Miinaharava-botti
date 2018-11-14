@@ -1,7 +1,11 @@
 
 package miinaharava.logic;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
+
 import javafx.scene.image.Image;
 
 public final class Board {
@@ -22,7 +26,8 @@ public final class Board {
     private final Image  EIGHT;
     private final Image  MINE;
     private final Image  MARKED;
-    
+
+    private HashMap<Integer, Set<Integer>> updatedCells;
     private Cell[][] board;
     private int[][] mines;
     private  boolean showMines;
@@ -57,11 +62,13 @@ public final class Board {
         this.mines = new int[x][y];
         this.showMines = false;
         this.isGameLost = false;
+
+        this.updatedCells = new HashMap<>();
         
         // fill board with empty cells
         for (int i = 0; i < sizeX; i++) {
             for (int j = 0; j < sizeY; j++) {
-                putCell(i, j, 10, false, false);
+                putCell(i, j,10, false, false);
             }
         }
     }
@@ -82,17 +89,18 @@ public final class Board {
         this.isGameStarted = false;
         this.showMines = false;
         this.isGameLost = false;
+        this.updatedCells.clear();
 
 //        System.out.println("lauta has been resetd");
     }
     
-    public String getMineCountString(){
-        return String.valueOf(this.mineCount);
-    }
+//    public String getMineCountString(){
+//        return String.valueOf(this.mineCount);
+//    }
 
-    public int getMineCountInt() {
-        return  this.mineCount;
-    }
+//    public int getMineCountInt() {
+//        return  this.mineCount;
+//    }
     
     public int getSizeX() {
         return sizeX;
@@ -106,7 +114,7 @@ public final class Board {
         return this.isGameStarted;
     }
 
-    public String getMarkCount() {
+    public String getRemainingMines() {
         return String.valueOf(this.mineCount -this.markCount);
     }
 
@@ -114,7 +122,7 @@ public final class Board {
         Random rng = new Random();
         
         int i = 0;
-        while (i < this.mineCount) {
+        while (i < mineCount) {
             int x = rng.nextInt(sizeX);
             int y = rng.nextInt(sizeY);
 
@@ -126,17 +134,19 @@ public final class Board {
                 }
             }
         }
-        this.isGameStarted = true;
+        isGameStarted = true;
 //        System.out.println("mines layed "+this.mineCount +", cells: "+this.remainingCells);
     }
     
-    public void revealMines() {
+    private void revealMines() {
         int lkm =0;
-        for (int i = 0; i < this.sizeX; i++) {
-            for (int j = 0; j < this.sizeY; j++) {
+        for (int i = 0; i < sizeX; i++) {
+            for (int j = 0; j < sizeY; j++) {
 
-                if (this.mines[i][j] == 1) {
-                    this.board[i][j] = new Cell(i, j, 9, true, false);
+                if (mines[i][j] == 1) {
+                    board[i][j].click();
+                    updateCell(i,j);
+//                    this.board[i][j] = new Cell(i, j, 9, true, false);
                     lkm++;
                 }
             }
@@ -148,7 +158,7 @@ public final class Board {
         return this.showMines;
     }
     
-    public boolean checkIfGameIsWon() {
+    public boolean isGameWon() {
         
 //        System.out.println("game win condition checked, remaining cells: "+this.remainingCells + ", GameWon = "+
 //                (this.remainingCells == this.mineCount && this.markCount == this.mineCount));
@@ -183,47 +193,42 @@ public final class Board {
         }
     }
     
-    public int getCellType(int x, int y) {
-        return this.board[x][y].getType();
-    }
+//    public int getCellType(int x, int y) {
+//        return this.board[x][y].getType();
+//    }
     
     public void clickCell(int x, int y) {
-        
-        Cell ruutu = getCell(x, y);
-        if (!this.isGameStarted) {
 
-            this.layMines(x, y);
+        Cell ruutu = getCell(x, y);
+        if (!isGameStarted) {
+
+            layMines(x, y);
         }
+
         if (!ruutu.isMarked() && !ruutu.isClicked()) { //only click unmarked and unclicked cells
 
-            if(!ruutu.isMarked()) {
-                if (ruutu.getTrueType() == 9) { // ruutu is mine -> reveal all of them and end game.
-                    
-                    System.out.println("clicked a mine -> lost game");
+            updateCell(x,y);
 
-//                    board[x][y].click();
+            if (ruutu.getTrueType() == 9) { // ruutu is mine -> reveal all of them and end game.
 
-                    putCell(x, y, 9, true, false);
-//                    this.revealMines();
-                    this.isGameLost = true;
+                System.out.println("clicked a mine -> lost game");
 
-                } else if (adjacentMinesCount(x, y) == 0) { // cell is empty -> open adjacent cells
-                    
-                    this.remainingCells--;
+                putCell(x, y, 9, true, false);
+                revealMines();
+                isGameLost = true;
 
-//                    board[x][y].click();
+            } else if (adjacentMinesCount(x, y) == 0) { // cell is empty -> open adjacent cells
 
-                    putCell(x, y, 0, true, false);
-                    openAdjacentCells(x, y);
+                remainingCells--;
 
-                } else { //any other case mark the cell
-                    
-                    this.remainingCells--;
+                putCell(x, y, 0, true, false);
+                openAdjacentCells(x, y);
 
-//                    board[x][y].click();
+            } else { //any other case mark the cell
 
-                    putCell(x, y, adjacentMinesCount(x, y), true, false);
-                }
+                remainingCells--;
+
+                putCell(x, y, adjacentMinesCount(x, y), true, false);
             }
         }
     }
@@ -232,27 +237,46 @@ public final class Board {
         
         Cell ruutu = getCell(x, y);
 
-        if (ruutu.isClicked() || this.isGameStarted) {
-            if (!ruutu.isClicked()) {
-                if (ruutu.isMarked()) { // unmark marked cell
+        if (!ruutu.isClicked() && isGameStarted) {
 
-                    this.markCount--;
+            updateCell(x,y);
 
-                    board[x][y].mark();
+            if (ruutu.isMarked()) { // unmark marked cell
+
+                markCount--;
+
+                board[x][y].mark();
 
 //                    putCell(x, y, ruutu.getTrueType(), false, false);
 
-                } else { // mark the cell
+            } else { // mark the cell
 
-                    this.markCount++;
+                markCount++;
 
-                    board[x][y].mark();
+                board[x][y].mark();
 
 //                    putCell(x, y, ruutu.getTrueType(), false, true);
 
-                }
             }
         }
+        updateCell(x,y);
+    }
+
+    private void updateCell(int x, int y) {
+        Set<Integer> setti = updatedCells.get(x);
+        if(setti == null) {
+            setti = new HashSet<>();
+        }
+        setti.add(y);
+        updatedCells.put(x,setti);
+    }
+
+    public HashMap<Integer, Set<Integer>> getUpdatedCells() {
+        return updatedCells;
+    }
+
+    public void clearChangedCells() {
+        this.updatedCells.clear();
     }
     
     private int adjacentMinesCount(int x, int y) {
@@ -264,7 +288,7 @@ public final class Board {
             for (int j = -1; j < 2; j++) { 
                 
                 // check that checked coordinates are inside of the array
-                if ((x + i >= 0 && x + i < this.sizeX && y + j >= 0 && y + j < this.sizeY)) {
+                if ((x + i >= 0 && x + i < sizeX && y + j >= 0 && y + j < sizeY)) {
                     
                     //dont check the original cell
                     if (!((x + i) == x && (y + j) == y)) {
@@ -282,14 +306,13 @@ public final class Board {
     }
     
     private void openAdjacentCells(int x, int y) {
-        
-//        System.out.println("opening adjacent cells, cells remaining: "+ (this.remainingCells -1));
+
         //check 3x3 area around given coordinates
         for (int i = -1; i < 2; i++) {
             for (int j = -1; j < 2; j++) {
 
-                // check that given coordinates are inside of the gamearray
-                if ((x + i >= 0 && x + i < this.sizeX && y + j >= 0 && y + j < this.sizeY)) {
+                // check that given coordinates are inside of the game array
+                if ((x + i >= 0 && x + i < sizeX && y + j >= 0 && y + j < sizeY)) {
 
                     //dont check the original cell
                     if (!((x + i) == x && (y + j) == y)) {
@@ -302,7 +325,7 @@ public final class Board {
     }
     
     public Cell getCell(int x, int y) {
-        return this.board[x][y];
+        return board[x][y];
     }
     
     private void putCell(int x, int y, int type, Boolean clicked, Boolean marked) {

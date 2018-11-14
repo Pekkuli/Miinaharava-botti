@@ -7,7 +7,7 @@ import miinaharava.logic.Board;
 import miinaharava.logic.Cell;
 import miinaharava.logic.MultiCell;
 
-import static java.lang.Integer.*;
+
 
 public class MiinaHaravaBot {
 
@@ -17,110 +17,98 @@ public class MiinaHaravaBot {
     private boolean isBotOn;
     private boolean isBotActive;
     private Board board;
-    private double averageMineChance;
-    private int actions;
+    private ArrayList<Cell> clickableCells;
+//    private double averageMineChance;
+//    private int actions;
 
 
-    public MiinaHaravaBot(Board board) {
+    public MiinaHaravaBot(Board brd) {
 
-        this.averageMineChance = (double) valueOf(board.getMineCountString()) / (board.getSizeX()*board.getSizeY());
-        this.isBotOn = false;
-        this.isBotActive = false;
-        this.board = board;
-        this.actions =0;
-        this.clickedCells = new ArrayList<>();
-        this.avaibleCells = new ArrayList<>();
-        this.multiCells = new ArrayList<>();
+//        this.averageMineChance = (double) valueOf(board.getMineCountString()) / (board.getSizeX()*board.getSizeY());
+        isBotOn = false;
+        isBotActive = false;
+        board = brd;
+//        this.actions =0;
 
-        this.averageMineChance = 1.0*board.getMineCountInt() / (board.getSizeX() * board.getSizeX());
+        avaibleCells = new ArrayList<>();
+        clickedCells = new ArrayList<>();
+        clickableCells = new ArrayList<>();
+        multiCells = new ArrayList<>();
+
+
+//        this.averageMineChance = 1.0*board.getMineCountInt() / (board.getSizeX() * board.getSizeX());
     }
     
     public void plei() {
         
-        if(this.isBotActive && !board.checkIfGameIsWon() && !board.isGameLost()) {
+        if(this.isBotActive && !board.isGameWon() && !board.isGameLost()) {
+
+            updateCellLists();
 
             if(!board.isGameStarted()){
 
                 clickRandomCell();
 
-            } else {
-
-                this.getAllClickedCells();
-
+            } else{
 
                 int remainingCells = board.getRemainingCellsCount();
 
-                this.markAllCertainMines();
-                this.openSafeCells();
+//                System.out.println("checking obvious cells");
+
+                markAllCertainMines();
+                openSafeCells();
 
                 if (remainingCells == board.getRemainingCellsCount()) {
+
+//                    System.out.println("no obvious cells. trying multicells");
 
                     this.createMultiCells();
                     this.checkCellsWithMultiCells();
 
-//                    System.out.println("MultiCells: "+ multiCells.size());
-
-//                    for(MultiCell dc: multiCells) {
-//                        System.out.println(dc.toString());
-////                        System.out.println(dc.hashCode());
-//                    }
-
-//                        1-2 rule !!!!!!
-
-                    if(multiCells.size() > parseInt(board.getMarkCount())) {
-//                            click any cell which is not in a doublecell
-                    }
-
-                    if(remainingCells == board.getRemainingCellsCount() && actions == 0) {
+                    if(remainingCells == board.getRemainingCellsCount()) {
 //                        System.out.println("average mine chance: " + this.averageMineChance + " " + getAverageChanceAsFraction());
-                        stop();
+
+//                        System.out.println("no multicells! clicking randomly");
+
+                        clickRandomCell();
+
+//                        if(remainingCells == board.getRemainingCellsCount()) {
+//                            stop();
+//                        }
                     }
                 }
-
             }
         } else {
             stop();
         }
-        actions = 0;
 
-//        Cell a = new Cell(33, 1, 2);
-//
-//        Cell ma = new Cell(33, 2, 10);
-//        Cell mb = new Cell(34, 2, 10);
-//
-//        ArrayList<Cell> lista = new ArrayList();
-//        lista.add(ma);
-//        lista.add(mb);
-//
-//        MultiCell mc = new MultiCell(lista);
-//
-//        System.out.println("toimiiko: " + mc.nextToCell(a));
-
-
+//        System.out.println("bot done playing this round -> into next round");
     }
 
-    private String getAverageChanceAsFraction() {
+//    private String getAverageChanceAsFraction() {
+//
+//        return  "(1 / " + String.valueOf( 1/averageMineChance) + ")";
+//    }
 
-        return  "(1 / " + String.valueOf( 1/averageMineChance) + ")";
-    }
-
-    private String getAverageMineChanceForCell(Cell cl) {
-
-        int mines = cl.getType() - this.getAdjacentMarkedCells(cl);
-
-        int surroundingCells = getSurroundingCells(cl).size();
-
-        if(surroundingCells == 0) {
-            return "0";
-        } else {
-//            return (double) (mines / surroundingCells);
-            return mines + " / " + surroundingCells;
-        }
-    }
+//    private String getAverageMineChanceForCell(Cell cl) {
+//
+//        int mines = cl.getType() - this.getAdjacentMarkedCells(cl);
+//
+//        int surroundingCells = getSurroundingCells(cl).size();
+//
+//        if(surroundingCells == 0) {
+//            return "0";
+//        } else {
+////            return (double) (mines / surroundingCells);
+//            return mines + " / " + surroundingCells;
+//        }
+//    }
 
     private void createMultiCells(){
 
         multiCells.clear();
+
+//        System.out.println("creating multicells");
 
         for(Cell cl: clickedCells) {
 
@@ -156,25 +144,28 @@ public class MiinaHaravaBot {
         multiCells = list;
     }
 
-    private boolean areCellsAdjacent(Cell c1, Cell c2) {
-
-        int dx = Math.abs(c1.getX()-c2.getX());
-        int dy = Math.abs(c1.getY()-c2.getY());
-
-        return dx +dy == 1;
-
-    }
+//    private boolean areCellsAdjacent(Cell c1, Cell c2) {
+//
+//        int dx = Math.abs(c1.getX()-c2.getX());
+//        int dy = Math.abs(c1.getY()-c2.getY());
+//
+//        return dx +dy == 1;
+//
+//    }
 
     private void checkCellsWithMultiCells() {
 
-        System.out.println("Checking multicells");
+//        System.out.println("Checking multicells");
 
         for (Cell cl: clickedCells) {
 
-
-
+//            System.out.println("Clicked cells:" + clickedCells.size());
+//            System.out.println("Looking at cell:" +cl);
 
             for (MultiCell multiCell : multiCells) {
+
+//                System.out.println("Multicells: " + multiCells.size());
+//                System.out.println("looking at multicell:" +multiCell);
 
                 ArrayList<Cell> surroundingCells = getSurroundingCells(cl);
                 int minesLeft = effectiveSurroundingMines(cl);
@@ -183,7 +174,7 @@ public class MiinaHaravaBot {
 
                 if (multiCell.nextToCell(cl)) {
 
-                    System.out.println("Accepted cell: " + cl);
+//                    System.out.println("Accepted cell: " + cl);
 
                     if (multiCell.containsMarks()) {
                         minesLeft -= multiCell.markCount()+1;
@@ -191,7 +182,7 @@ public class MiinaHaravaBot {
                         minesLeft--;
                     }
 
-                    System.out.println("mines left: " + minesLeft);
+//                    System.out.println("mines left: " + minesLeft);
 
                     surroundingCells.removeAll(multiCell.getCells());
 
@@ -201,7 +192,7 @@ public class MiinaHaravaBot {
 
                             for (Cell cll : surroundingCells) {
 
-                                System.out.println("Opening empty cell at: " + cll.toString() + " " + cl.toString() + " " + multiCell.toString());
+//                                System.out.println("Opening empty cell at: " + cll.toString() + " " + cl.toString() + " " + multiCell.toString());
 
                                 botLeftClick(cll);
                             }
@@ -212,50 +203,47 @@ public class MiinaHaravaBot {
 
                             if (!a.isMarked()) {
 
-                                System.out.println("Marking a mine at: " + a.toString() + " " + cl.toString() + " " + multiCell.toString());
+//                                System.out.println("Marking a mine at: " + a.toString() + " " + cl.toString() + " " + multiCell.toString());
 
-                                actions++;
                                 botRightClick(a);
-
                             }
                         }
                     }
                 }
             }
-
-
         }
+//        System.out.println("done looking at multicells");
     }
 
-    private void checkOneTwoRule() {
+//    private void checkOneTwoRule() {
+//
+//        for(Cell cl: clickedCells) {
+//
+//            if( (effectiveSurroundingMines(cl) == 1) && getSurroundingCells(cl).size() == 3) {
+//
+//                if(isCellNextToTwo(cl) ) {
+//
+//
+//
+//                }
+//
+//            }
+//        }
+//    }
 
-        for(Cell cl: clickedCells) {
-
-            if( (effectiveSurroundingMines(cl) == 1) && getSurroundingCells(cl).size() == 3) {
-
-                if(isCellNextToTwo(cl) ) {
-
-
-
-                }
-
-            }
-        }
-    }
-
-    private boolean isCellNextToTwo(Cell cl) {
-
-        int x = cl.getX();
-        int y = cl.getY();
-
-        if( (board.getCellType(x - 1, y) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x - 1, y).size() == 3) ) {
-            return true;
-        } else if((board.getCellType(x + 1, y) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x - 1, y).size() == 3) ) {
-            return true;
-        } else if( (board.getCellType(x,y - 1) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x - 1, y).size() == 3) ) {
-            return true;
-        } else return (board.getCellType(x, y + 1) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x - 1, y).size() == 3);
-    }
+//    private boolean isCellNextToTwo(Cell cl) {
+//
+//        int x = cl.getX();
+//        int y = cl.getY();
+//
+//        if( (board.getCellType(x - 1, y) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x - 1, y).size() == 3) ) {
+//            return true;
+//        } else if((board.getCellType(x + 1, y) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x + 1, y).size() == 3) ) {
+//            return true;
+//        } else if( (board.getCellType(x,y - 1) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x , y - 1).size() == 3) ) {
+//            return true;
+//        } else return (board.getCellType(x, y + 1) - getAdjacentMarkedCells(cl) == 2) && (getSurroundingCells(x, y + 1).size() == 3);
+//    }
 
     private int effectiveSurroundingMines(Cell cl) {
         return cl.getType() - getAdjacentMarkedCells(cl);
@@ -265,20 +253,38 @@ public class MiinaHaravaBot {
 
         Random rng = new Random();
 
-        int s = rng.nextInt(3);
+//        int s = rng.nextInt(3);
+
+        updateCellLists();
 
         while(true) {
+//
+//            int x = rng.nextInt(board.getSizeX());
+//            int y = rng.nextInt(board.getSizeY());
 
-            int x = rng.nextInt(board.getSizeX());
-            int y = rng.nextInt(board.getSizeY());
+            if(clickableCells.isEmpty()){
+                break;
+            }
 
-            if(board.getCellType(x,y) == 10 && !board.getCell(x,y).isMarked()) {
+            int x = rng.nextInt(clickableCells.size());
 
-                botLeftClick(x,y );
+            Cell rngCell = clickableCells.get(x);
+
+            if(rngCell.getType() == 10 && !rngCell.isMarked()) {
+
+                botLeftClick(rngCell);
 //                System.out.println("Bot clicking randomly at: "+ board.getCell(x,y));
+
+                if(board.isGameLost()) {
+                    System.out.println("FEK! Bot accidentally the whole mine");
+                    System.out.println("-> bot into kys");
+                    stop();
+                }
+
                 break;
             }
         }
+
     }
 
     private void openSafeCells() {
@@ -334,9 +340,7 @@ public class MiinaHaravaBot {
 
     private void getAllClickedCells() {
 
-        this.clickedCells.clear();
-
-        this.getAllAvaibleCells();
+        clickedCells.clear();
 
         for(Cell cl: avaibleCells) {
 
@@ -344,32 +348,36 @@ public class MiinaHaravaBot {
                 this.clickedCells.add(cl);
             }
         }
-//
-//
-//        for( int i=0;i< board.getSizeX();i++) {
-//            for(int j=0;j<board.getSizeY();j++) {
-//
-////                only opened cells with surrounding nonempty cells
-//                if(board.getCellType(i,j) !=10 && !board.getCell(i,j).isMarked() && !this.getSurroundingCells(board.getCell(i,j)).isEmpty()) {
-//                    this.clickedCells.add(board.getCell(i,j));
-//                }
-//            }
-//        }
     }
 
-    private void getAllAvaibleCells() {
+    private void getAllClickableCells() {
 
-        this.avaibleCells.clear();
+        clickableCells.clear();
+
+        for(Cell cl: avaibleCells) {
+
+            if(cl.getType() ==10 && !cl.isMarked()) {
+                clickableCells.add(cl);
+            }
+        }
+    }
+
+    private void updateCellLists() {
+
+//        System.out.println("updating bot cell-lists");
+
+        avaibleCells.clear();
 
         for( int i=0;i< board.getSizeX();i++) {
             for(int j=0;j<board.getSizeY();j++) {
                 this.avaibleCells.add(board.getCell(i,j));
             }
         }
+        getAllClickedCells();
+        getAllClickableCells();
     }
     
     private ArrayList<Cell> getSurroundingCells(Cell cell) {
-        ArrayList<Cell> list = new ArrayList<>();
 
         int x = cell.getX();
         int y = cell.getY();
@@ -394,7 +402,7 @@ public class MiinaHaravaBot {
 
                         // if cell is a untouched cell
                         if (cl.getType() == 10 && !cl.isMarked()) {
-                            list.add(board.getCell(x+i, y+j));
+                            list.add(cl);
                         }
                     }
                 }
@@ -435,26 +443,20 @@ public class MiinaHaravaBot {
     }
 
     private void botRightClick(Cell cl) {
-
         board.markCell(cl.getX(), cl.getY());
-//        System.out.println("bot marked cell at: "+cl.getCoordsAsString());
-
     }
 
-    private void botRightClick(int x, int y) {
-        botRightClick(new Cell(x,y,10));
-    }
+//    private void botRightClick(int x, int y) {
+//        board.markCell(x, y);
+//    }
 
     private void botLeftClick(Cell cl) {
-
         board.clickCell(cl.getX(), cl.getY());
-//        System.out.println("bot clicked cell at: "+cl.getCoordsAsString());
-
     }
 
-    private void botLeftClick(int x, int y) {
-        botLeftClick(new Cell(x,y ,10 ));
-    }
+//    private void botLeftClick(int x, int y) {
+//        board.clickCell(x, y);
+//    }
 
     public void deActivate() {
         this.isBotActive = false;
@@ -475,7 +477,7 @@ public class MiinaHaravaBot {
         this.isBotOn=false;
         this.clickedCells.clear();
         this.multiCells.clear();
-        System.out.println("bot is done");
+        System.out.println("stopping bot");
     }
 
 }
